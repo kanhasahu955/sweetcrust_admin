@@ -2,7 +2,8 @@ import { defineNuxtConfig } from "nuxt/config"
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
-  devtools: { enabled: true },
+  // Never ship DevTools to production — can trigger "Not Secure" (ws:// mixed content).
+  devtools: { enabled: process.env.NODE_ENV !== "production" },
   modules: ["@pinia/nuxt", "@nuxt/ui"],
   css: ["~/assets/css/main.css"],
   pinia: {
@@ -38,6 +39,21 @@ export default defineNuxtConfig({
           href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap",
         },
       ],
+    },
+  },
+  routeRules: {
+    "/**": {
+      headers: {
+        "Content-Security-Policy": "upgrade-insecure-requests",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+      },
+    },
+  },
+  nitro: {
+    // Behind nginx TLS termination
+    experimental: {
+      openAPI: false,
     },
   },
   devServer: { port: 3002 },
