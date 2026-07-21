@@ -1,0 +1,243 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+
+  /* Standard radii — do NOT multiply via --ui-radius (that made cards pill-shaped) */
+  --radius-xs: 0.125rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+
+  --color-cream: #f7f1e8;
+  --color-surface: #fffbf5;
+  --color-chocolate: #3d2314;
+  --color-blush: #f3d4d0;
+  --color-apricot: #e8a87c;
+  --color-cocoa: #5c3317;
+  --color-honey: #d4893a;
+  --color-success: #1f6b3a;
+  --color-danger: #b42318;
+
+  --color-cocoa-50: #faf6f2;
+  --color-cocoa-100: #f3ebe2;
+  --color-cocoa-200: #e2d4c4;
+  --color-cocoa-300: #c9b09a;
+  --color-cocoa-400: #8b5a2b;
+  --color-cocoa-500: #5c3317;
+  --color-cocoa-600: #3d2314;
+  --color-cocoa-700: #2a1a12;
+  --color-cocoa-800: #1f1410;
+  --color-cocoa-900: #120e0b;
+  --color-cocoa-950: #0a0705;
+
+  --color-honey-50: #fdf8f0;
+  --color-honey-100: #f9edd9;
+  --color-honey-200: #f0d4a8;
+  --color-honey-300: #e8a87c;
+  --color-honey-400: #d4893a;
+  --color-honey-500: #d4893a;
+  --color-honey-600: #c8971a;
+  --color-honey-700: #a67a15;
+  --color-honey-800: #7a5a10;
+  --color-honey-900: #5c440c;
+  --color-honey-950: #3d2e08;
+}
+
+:root {
+  --bg: #f3ebe2;
+  --surface: #fffbf5;
+  --ink: #1f1410;
+  --muted: #6e5c4d;
+  --line: #e2d4c4;
+  --primary: #5c3317;
+  --accent: #d4893a;
+  --blush: #f0d4ce;
+  --success: #1f6b3a;
+  --danger: #b42318;
+}
+
+.light,
+:root,
+:host {
+  --ui-radius: 0.25rem;
+
+  --ui-color-primary-50: #faf6f2;
+  --ui-color-primary-100: #f3ebe2;
+  --ui-color-primary-200: #e2d4c4;
+  --ui-color-primary-300: #c9b09a;
+  --ui-color-primary-400: #8b5a2b;
+  --ui-color-primary-500: #5c3317;
+  --ui-color-primary-600: #3d2314;
+  --ui-color-primary-700: #2a1a12;
+  --ui-color-primary-800: #1f1410;
+  --ui-color-primary-900: #120e0b;
+  --ui-color-primary-950: #0a0705;
+
+  --ui-color-secondary-50: #fdf8f0;
+  --ui-color-secondary-100: #f9edd9;
+  --ui-color-secondary-200: #f0d4a8;
+  --ui-color-secondary-300: #e8a87c;
+  --ui-color-secondary-400: #d4893a;
+  --ui-color-secondary-500: #d4893a;
+  --ui-color-secondary-600: #c8971a;
+  --ui-color-secondary-700: #a67a15;
+  --ui-color-secondary-800: #7a5a10;
+  --ui-color-secondary-900: #5c440c;
+  --ui-color-secondary-950: #3d2e08;
+
+  --ui-color-warning-50: #fdf8f0;
+  --ui-color-warning-100: #f9edd9;
+  --ui-color-warning-200: #f0d4a8;
+  --ui-color-warning-300: #e8a87c;
+  --ui-color-warning-400: #d4893a;
+  --ui-color-warning-500: #d4893a;
+  --ui-color-warning-600: #c8971a;
+  --ui-color-warning-700: #a67a15;
+  --ui-color-warning-800: #7a5a10;
+  --ui-color-warning-900: #5c440c;
+  --ui-color-warning-950: #3d2e08;
+
+  --ui-primary: #5c3317;
+  --ui-secondary: #d4893a;
+  --ui-warning: #d4893a;
+  --ui-success: #1f6b3a;
+
+  --ui-text-dimmed: #a8927e;
+  --ui-text-muted: #6e5c4d;
+  --ui-text-toned: #5c4a3c;
+  --ui-text: #3d2314;
+  --ui-text-highlighted: #1f1410;
+  --ui-text-inverted: #fffbf5;
+
+  --ui-bg: #fffbf5;
+  --ui-bg-muted: #f3ebe2;
+  --ui-bg-elevated: #f7f1e8;
+  --ui-bg-accented: #e2d4c4;
+  --ui-bg-inverted: #3d2314;
+
+  --ui-border: #e2d4c4;
+  --ui-border-muted: #ebe0d4;
+  --ui-border-accented: #d4c4b0;
+  --ui-border-inverted: #3d2314;
+}
+
+html,
+body,
+#__nuxt {
+  min-height: 100%;
+}
+
+body {
+  margin: 0 !important;
+  color: var(--ink) !important;
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(ellipse 80% 50% at 0% -10%, rgba(200, 151, 26, 0.12), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(92, 64, 48, 0.08), transparent 50%),
+    linear-gradient(180deg, #f7f0e8 0%, var(--bg) 40%, #efe4d8 100%) !important;
+}
+
+.font-display {
+  font-family: "Fraunces", Georgia, serif !important;
+  letter-spacing: -0.02em;
+}
+
+@layer components {
+  .sc-card {
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: 0 10px 30px -18px rgba(42, 26, 18, 0.35);
+  }
+  .sc-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 12px;
+    background: #5c3317;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #fffbf5;
+    box-shadow: 0 1px 2px rgba(42, 26, 18, 0.12);
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+  }
+  .sc-btn:hover {
+    background: #3d2314;
+    box-shadow: 0 4px 12px rgba(42, 26, 18, 0.18);
+  }
+  .sc-btn:disabled {
+    opacity: 0.5;
+  }
+  .sc-btn-soft {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 12px;
+    background: rgba(212, 137, 58, 0.2);
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #3d2314;
+    transition: background 0.15s ease;
+  }
+  .sc-btn-soft:hover {
+    background: rgba(212, 137, 58, 0.35);
+  }
+  .sc-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.6);
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #3d2314;
+    transition: background 0.15s ease;
+  }
+  .sc-btn-ghost:hover {
+    background: #f7f1e8;
+  }
+  .sc-input {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #fff;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+  }
+  .sc-input:focus {
+    border-color: #d4893a;
+    box-shadow: 0 0 0 3px rgba(212, 137, 58, 0.25);
+  }
+  .sc-label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .sc-badge {
+    display: inline-flex;
+    border-radius: 9999px;
+    padding: 0.125rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+}

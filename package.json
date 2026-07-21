@@ -1,0 +1,33 @@
+{
+  "name": "admin",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev --port 3002",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/icon": "^2.3.1",
+    "@nuxt/ui": "^4.10.0",
+    "@pinia/nuxt": "^1.0.1",
+    "chart.js": "^4.5.1",
+    "dayjs": "^1.11.21",
+    "nuxt": "^4.4.8",
+    "pinia": "^4.0.2",
+    "socket.io-client": "^4.8.3",
+    "tailwindcss": "^4.3.3",
+    "vue": "^3.5.39",
+    "vue-chartjs": "^5.3.4",
+    "vue-router": "^5.1.0",
+    "vue-sonner": "^2.0.9"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.118",
+    "@types/node": "^26.1.1",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.3.7"
+  }
+}
