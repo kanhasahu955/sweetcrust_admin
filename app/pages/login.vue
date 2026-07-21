@@ -53,8 +53,8 @@ async function submit() {
         password: form.password,
       })
       info.value = res.email_sent
-        ? `Code sent to ${res.email}`
-        : `Email not sent${res.dev_code ? ` — code ${res.dev_code}` : ""}`
+        ? `Code sent to ${res.email}${res.dev_code ? ` — use code ${res.dev_code}` : ""}`
+        : `Email not sent${res.dev_code ? ` — use code ${res.dev_code}` : ""}`
       if (res.dev_code) form.code = res.dev_code
       mode.value = "confirm"
       registrationOpen.value = false
@@ -80,7 +80,9 @@ async function resend() {
   error.value = ""
   try {
     const res = await api.auth.resendConfirmation(form.email)
-    info.value = res.email_sent ? "Code resent" : `Resend issue${res.dev_code ? ` — ${res.dev_code}` : ""}`
+    info.value = res.email_sent
+      ? `Code resent${res.dev_code ? ` — ${res.dev_code}` : ""}`
+      : `Resend issue${res.dev_code ? ` — ${res.dev_code}` : ""}`
     if (res.dev_code) form.code = res.dev_code
   } catch (e) {
     error.value = apiError(e)

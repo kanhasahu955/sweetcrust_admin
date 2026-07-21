@@ -42,14 +42,11 @@ export function useApi() {
     if (opts.auth !== false && auth.accessToken) headers.Authorization = `Bearer ${auth.accessToken}`
 
     // Admin lists must never reuse a cached GET after create/update/delete.
+    // Keep headers CORS-simple (no Cache-Control/Pragma) so browsers skip brittle preflights.
     const fetchOpts = {
       method: opts.method || "GET",
       body: opts.body as Record<string, unknown> | undefined,
-      headers: {
-        ...headers,
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      },
+      headers,
       cache: "no-store" as RequestCache,
     }
 
