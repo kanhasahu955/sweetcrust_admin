@@ -64,10 +64,11 @@ jobs:
 
       - name: Write .env.production
         env:
-          NUXT_PUBLIC_API_BASE: ${{ vars.NUXT_PUBLIC_API_BASE || 'https://api.skbakery.in' }}
-          NUXT_PUBLIC_SOCKET_BASE: ${{ vars.NUXT_PUBLIC_SOCKET_BASE || 'https://api.skbakery.in' }}
+          NUXT_PUBLIC_API_BASE: ${{ vars.NUXT_PUBLIC_API_BASE }}
+          NUXT_PUBLIC_SOCKET_BASE: ${{ vars.NUXT_PUBLIC_SOCKET_BASE }}
           CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
         run: |
+          set -euo pipefail
           cat > .env.production <<EOF
           NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE:-https://api.skbakery.in}
           NUXT_PUBLIC_SOCKET_BASE=${NUXT_PUBLIC_SOCKET_BASE:-https://api.skbakery.in}
@@ -75,15 +76,18 @@ jobs:
           CERTBOT_EMAIL=${CERTBOT_EMAIL:-}
           DEPLOY_PATH=/opt/sweetcrust/admin
           EOF
-          # strip leading spaces from heredoc
           sed -i 's/^[[:space:]]*//' .env.production
           chmod 600 .env.production
+          echo "API base: $(grep NUXT_PUBLIC_API_BASE .env.production)"
 
       - name: Deploy
         env:
           SKIP_BUILD: ${{ inputs.skip_build && '1' || '0' }}
         run: |
+          set -euo pipefail
           chmod +x deploy/hostinger/*.sh
+          # CI uses ~/.ssh/config Host hostinger-vps (no local hostinger_gha key)
+          unset DEPLOY_SSH_KEY || true
           ./deploy/hostinger/deploy.sh --ci
 
       - name: Health check

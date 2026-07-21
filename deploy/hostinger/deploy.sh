@@ -54,20 +54,26 @@ compose_up() {
   return 1
 }
 
-SSH_OPTS=(-o BatchMode=yes)
-if [[ -n "${DEPLOY_SSH_KEY:-}" && -f "${DEPLOY_SSH_KEY}" ]]; then
-  SSH_OPTS+=(-i "${DEPLOY_SSH_KEY}")
-elif [[ -f "${HOME}/.ssh/hostinger_gha" ]]; then
-  SSH_OPTS+=(-i "${HOME}/.ssh/hostinger_gha")
-fi
+# Laptop: use hostinger_gha. CI: use Host hostinger-vps from ~/.ssh/config (no -i).
+ssh_base() {
+  if [[ "$CI" == "1" ]]; then
+    echo ssh -o BatchMode=yes
+  elif [[ -n "${DEPLOY_SSH_KEY:-}" && -f "${DEPLOY_SSH_KEY}" ]]; then
+    echo ssh -o BatchMode=yes -i "${DEPLOY_SSH_KEY}"
+  elif [[ -f "${HOME}/.ssh/hostinger_gha" ]]; then
+    echo ssh -o BatchMode=yes -i "${HOME}/.ssh/hostinger_gha"
+  else
+    echo ssh -o BatchMode=yes
+  fi
+}
 
 rsync_to() {
   local remote="$1"
-  local ssh_cmd=(ssh "${SSH_OPTS[@]}" "$remote")
-  local rsh="ssh ${SSH_OPTS[*]}"
-  "${ssh_cmd[@]}" "mkdir -p '${DEPLOY_PATH}'"
+  local ssh
+  ssh="$(ssh_base)"
+  $ssh "$remote" "mkdir -p '${DEPLOY_PATH}'"
   rsync -az --delete \
-    -e "$rsh" \
+    -e "$ssh" \
     --exclude node_modules \
     --exclude .output \
     --exclude .nuxt \
@@ -77,8 +83,11 @@ rsync_to() {
     --exclude '.env.*' \
     --exclude .DS_Store \
     ./ "${remote}:${DEPLOY_PATH}/"
-  scp "${SSH_OPTS[@]}" .env.production "${remote}:${DEPLOY_PATH}/.env.production"
-  "${ssh_cmd[@]}" \
+  # scp uses same identity flags as ssh (strip leading "ssh ")
+  local scp_flags="${ssh#ssh }"
+  # shellcheck disable=SC2086
+  scp $scp_flags .env.production "${remote}:${DEPLOY_PATH}/.env.production"
+  $ssh "$remote" \
     "cd '${DEPLOY_PATH}' && chmod +x deploy/hostinger/*.sh && SKIP_BUILD=${SKIP_BUILD} ./deploy/hostinger/deploy.sh --local"
 }
 

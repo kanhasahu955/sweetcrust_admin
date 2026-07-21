@@ -1,32 +1,43 @@
-# Deploy Admin → Hostinger VPS
+# Admin CI/CD → Hostinger VPS
 
-| | |
-|--|--|
-| URL | `https://admin.skbakery.in` |
-| API | `https://api.skbakery.in` |
-| VPS path | `/opt/sweetcrust/admin` |
-| Network | joins `backend_v2_sweetcrust` (nginx in backend terminates TLS) |
+Repo: https://github.com/kanhasahu955/sweetcrust_admin  
+Live: https://admin.skbakery.in  
+API: https://api.skbakery.in  
+VPS path: `/opt/sweetcrust/admin`
 
-## One-time
+```text
+git push main → GitHub Actions → SSH/rsync → /opt/sweetcrust/admin → docker compose up --build
+```
 
-1. DNS: `admin.skbakery.in` A → `145.223.21.127`
-2. GitHub repo secrets (same as API): `HOSTINGER_HOST`, `HOSTINGER_USER`, `HOSTINGER_SSH_KEY`, optional `CERTBOT_EMAIL`
-3. Push this `admin/` repo to GitHub (or rsync from laptop)
-
-## Laptop deploy (no GitHub yet)
+## One-time secrets (same SSH key as sweetcrust_api)
 
 ```bash
 cd admin
-cp .env.production.example .env.production   # already points at api.skbakery.in
-./deploy/hostinger/deploy.sh
-# then on VPS (or from laptop SSH):
-ssh root@145.223.21.127 'cd /opt/sweetcrust/admin && ./deploy/hostinger/issue-cert.sh'
+chmod +x deploy/hostinger/bootstrap-github-secrets.sh
+./deploy/hostinger/bootstrap-github-secrets.sh --email support@bakerywala.cloud
 ```
 
-## GitHub Actions
+Sets on `kanhasahu955/sweetcrust_admin`:
 
-Push `main` → workflow writes `.env.production` with production API URLs → rsync → `docker compose up --build`.
+| Secret | Value |
+|--------|--------|
+| `HOSTINGER_HOST` | `145.223.21.127` |
+| `HOSTINGER_USER` | `root` |
+| `HOSTINGER_SSH_KEY` | `~/.ssh/hostinger_gha` |
+| `CERTBOT_EMAIL` | optional |
 
-## CORS
+Variables (optional): `NUXT_PUBLIC_API_BASE`, `NUXT_PUBLIC_SOCKET_BASE` (default `https://api.skbakery.in`).
 
-Backend CORS must include `https://admin.skbakery.in` (already in sync-env overlays).
+## Deploy
+
+```bash
+git add -A && git commit -m "…" && git push origin main
+```
+
+Or: Actions → **Deploy Admin** → **Run workflow**.
+
+## Laptop deploy (without waiting for Actions)
+
+```bash
+./deploy/hostinger/deploy.sh
+```
