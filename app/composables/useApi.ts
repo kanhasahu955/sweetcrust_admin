@@ -133,16 +133,19 @@ export function useApi() {
         patch(`/api/v1/admin/orders/${id}/status`, body),
       assignDelivery: (id: number, delivery_person_id: number) =>
         post(`/api/v1/admin/orders/${id}/assign-delivery`, { delivery_person_id }),
+      offerDelivery: (id: number, delivery_person_id: number) =>
+        post(`/api/v1/admin/orders/${id}/offer-delivery`, { delivery_person_id }),
       createInvoice: (id: number) => post<Record<string, unknown>>(`/api/v1/admin/orders/${id}/invoice`, {}),
       paymentLink: (id: number) => post<Record<string, unknown>>(`/api/v1/admin/orders/${id}/payment-link`, {}),
-      products: (q?: string, page = 1, category_id?: number) =>
-        get<unknown>(`/api/v1/admin/products${qs({ q, page, category_id })}`),
+      products: (q?: string, page = 1, category_id?: number, supplier_user_id?: number) =>
+        get<unknown>(`/api/v1/admin/products${qs({ q, page, category_id, supplier_user_id })}`),
       createProduct: (body: Record<string, unknown>) => post("/api/v1/admin/products", body),
       updateProduct: (id: number, body: Record<string, unknown>) => patch(`/api/v1/admin/products/${id}`, body),
       deleteProduct: (id: number) => del(`/api/v1/admin/products/${id}`),
       duplicateProduct: (id: number) => post(`/api/v1/admin/products/${id}/duplicate`, {}),
       updateStock: (id: number, body: { stock_qty: number; reason?: string }) =>
         patch(`/api/v1/admin/products/${id}/stock`, body),
+      units: () => get<{ code: string; label: string }[]>("/api/v1/admin/units"),
       categories: () => get<unknown[]>("/api/v1/admin/categories"),
       createCategory: (body: Record<string, unknown>) => post("/api/v1/admin/categories", body),
       updateCategory: (id: number, body: Record<string, unknown>) => patch(`/api/v1/admin/categories/${id}`, body),
@@ -162,8 +165,23 @@ export function useApi() {
       approveShop: (id: number, body: Record<string, unknown> = {}) =>
         post(`/api/v1/admin/shops/${id}/approve`, body),
       rejectShop: (id: number) => post(`/api/v1/admin/shops/${id}/reject`, {}),
+      setSellSubscription: (id: number, status: string) =>
+        post(`/api/v1/admin/shops/${id}/sell-subscription`, { status }),
       shopLedger: (id: number) => get<unknown[]>(`/api/v1/admin/shops/${id}/ledger`),
       shopAccount: (id: number) => get<Record<string, unknown>>(`/api/v1/admin/shops/${id}/account`),
+      shopCatalog: (id: number) =>
+        get<{
+          products?: Record<string, unknown>[]
+          banners?: Record<string, unknown>[]
+          coupons?: Record<string, unknown>[]
+          sales?: Record<string, unknown>[]
+          counts?: Record<string, number>
+          shop_name?: string
+        }>(`/api/v1/admin/shops/${id}/catalog`),
+      shopBannerActive: (shopId: number, bannerId: number, is_active: boolean) =>
+        patch(`/api/v1/admin/shops/${shopId}/banners/${bannerId}`, { is_active }),
+      shopCouponActive: (shopId: number, couponId: number, is_active: boolean) =>
+        patch(`/api/v1/admin/shops/${shopId}/coupons/${couponId}`, { is_active }),
       shopCollect: (id: number, body: { amount: number; note?: string; method?: string }) =>
         post(`/api/v1/admin/shops/${id}/collect`, body),
       purchases: (supplier_user_id?: number) =>

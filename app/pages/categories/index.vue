@@ -281,15 +281,27 @@ onMounted(() => load())
               >
                 {{ row.name }}
               </h2>
-              <span
-                class="sc-badge shrink-0"
-                :class="row.is_active === false ? 'bg-cream text-[var(--muted)]' : 'bg-success/15 text-[#1f6b3a]'"
-              >
-                {{ row.is_active === false ? "Off" : "Active" }}
-              </span>
+              <div class="flex shrink-0 flex-col items-end gap-1">
+                <span
+                  class="sc-badge"
+                  :class="row.is_active === false ? 'bg-cream text-[var(--muted)]' : 'bg-success/15 text-[#1f6b3a]'"
+                >
+                  {{ row.is_active === false ? "Off" : "Active" }}
+                </span>
+                <span
+                  v-if="row.source === 'shop'"
+                  class="sc-badge bg-honey/25 text-cocoa"
+                >
+                  Shop
+                </span>
+              </div>
             </div>
             <p class="mt-1 text-xs text-[var(--muted)]">
               #{{ row.id }}
+              <span v-if="row.source === 'shop'">
+                · Shop{{ row.owner_shop_name ? ` · ${row.owner_shop_name}` : "" }}
+              </span>
+              <span v-else-if="row.parent_id"> · subcategory</span>
               <span v-if="!row.image_url"> · no image</span>
             </p>
           </div>

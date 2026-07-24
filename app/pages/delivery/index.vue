@@ -29,6 +29,14 @@ async function add() {
   try {
     error.value = ""
     info.value = ""
+    if (!form.phone.trim() || !form.password.trim()) {
+      error.value = "Phone and password are required"
+      return
+    }
+    if (form.password.trim().length < 6) {
+      error.value = "Password must be at least 6 characters"
+      return
+    }
     const created = await api.admin.addRider({ ...form })
     upsertListRow(riders, created)
     info.value = `Rider can login: ${form.phone} / ${form.password}`
@@ -52,6 +60,21 @@ async function saveRider(r: Record<string, unknown>) {
       patchListRow(riders, id, { default_trip_cost: editCost[id], is_available: r.is_available !== false })
     }
     info.value = `Rider #${id} updated`
+    void load()
+  } catch (e) {
+    error.value = apiError(e)
+  }
+}
+
+/** Create / reset delivery login for an existing rider row (phone + password). */
+async function enableLogin(r: Record<string, unknown>, password = "password") {
+  const id = Number(r.id)
+  const phone = String(r.phone || "")
+  try {
+    error.value = ""
+    info.value = ""
+    await api.admin.patchRider(id, { password, phone, name: r.name })
+    info.value = `Rider can login: ${phone.replace(/^\+91/, "")} / ${password}`
     void load()
   } catch (e) {
     error.value = apiError(e)
@@ -132,6 +155,7 @@ onMounted(load)
             <input v-model.number="editCost[Number(r.id)]" type="number" class="sc-input !w-20 !py-1">
           </label>
           <UButton type="button" color="primary" variant="soft" class=" !py-1 text-xs" @click="saveRider(r)">Save</UButton>
+          <UButton type="button" color="neutral" variant="soft" class=" !py-1 text-xs" @click="enableLogin(r)">Enable login</UButton>
           <button type="button" class="sc-badge" :class="r.is_available === false ? 'bg-cream text-[var(--muted)]' : 'bg-blush/70 text-cocoa'" @click="toggleAvailable(r)">
             {{ r.is_available === false ? "Busy" : "Available" }} · {{ money(Number(r.default_trip_cost ?? 40)) }}/trip
           </button>

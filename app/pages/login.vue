@@ -69,7 +69,12 @@ async function submit() {
     }
   } catch (e) {
     error.value = apiError(e)
-    if (error.value.toLowerCase().includes("confirm")) mode.value = "confirm"
+    const msg = error.value.toLowerCase()
+    if (msg.includes("confirm")) mode.value = "confirm"
+    else if (mode.value === "login" && registrationOpen.value) {
+      error.value = "No admin account yet — use Register first."
+      mode.value = "register"
+    }
   } finally {
     busy.value = false
   }

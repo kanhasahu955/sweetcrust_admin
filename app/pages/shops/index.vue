@@ -22,7 +22,17 @@ const showPassword = ref(false)
 const createdCreds = ref<{ phone: string; password: string; shop_name: string } | null>(null)
 const filter = ref<"all" | "pending" | "incomplete" | "approved" | "rejected">("all")
 const detailOpen = ref(false)
-const tab = ref<"overview" | "orders" | "payments" | "supplier">("overview")
+const tab = ref<"overview" | "catalog" | "orders" | "payments" | "supplier">("overview")
+const catalogSection = ref<"products" | "offers" | "banners" | "sales">("products")
+const catalogLoading = ref(false)
+const catalog = ref<{
+  products?: Record<string, unknown>[]
+  banners?: Record<string, unknown>[]
+  coupons?: Record<string, unknown>[]
+  sales?: Record<string, unknown>[]
+  counts?: Record<string, number>
+} | null>(null)
+const expandedProductId = ref<number | null>(null)
 const expandedOrderId = ref<number | null>(null)
 const supplierPay = ref<Record<string, unknown> | null>(null)
 const supplierPayForm = reactive({ amount: 0, pay_method: "razorpay", note: "" })
@@ -88,9 +98,25 @@ const drawerDesc = computed(() => {
   return `${selected.value.owner_name || "—"} · ${statusLabel(statusOf(selected.value))}`
 })
 
+const catalogCounts = computed(() => catalog.value?.counts || {})
+const catalogProducts = computed(() =>
+  Array.isArray(catalog.value?.products) ? catalog.value!.products! : [],
+)
+const catalogCoupons = computed(() =>
+  Array.isArray(catalog.value?.coupons) ? catalog.value!.coupons! : [],
+)
+const catalogBanners = computed(() =>
+  Array.isArray(catalog.value?.banners) ? catalog.value!.banners! : [],
+)
+const catalogSales = computed(() =>
+  Array.isArray(catalog.value?.sales) ? catalog.value!.sales! : [],
+)
+
 const drawerTabs = computed(() => {
+  const pc = Number(catalogCounts.value.products ?? 0)
   const tabs: { key: typeof tab.value; label: string }[] = [
     { key: "overview", label: "Account" },
+    { key: "catalog", label: pc ? `Catalog (${pc})` : "Catalog" },
     { key: "orders", label: `Orders (${orders.value.length})` },
     { key: "payments", label: "Payments" },
   ]
@@ -127,6 +153,10 @@ function payBadge(status: unknown) {
 }
 function shopId(s: Record<string, unknown>) {
   return Number(s.user_id || s.id)
+}
+function saleOrder(row: Record<string, unknown>) {
+  const o = row.order
+  return o && typeof o === "object" ? (o as Record<string, unknown>) : {}
 }
 function isSelected(s: Record<string, unknown>) {
   return detailOpen.value && selected.value != null && shopId(selected.value) === shopId(s)
@@ -294,6 +324,93 @@ async function load(opts: { quiet?: boolean } = {}) {
   }
 }
 
+async function loadCatalog(id: number) {
+  catalogLoading.value = true
+  try {
+    catalog.value = await api.admin.shopCatalog(id)
+  } catch (e) {
+    error.value = apiError(e)
+    catalog.value = null
+  } finally {
+    catalogLoading.value = false
+  }
+}
+
+async function setDrawerTab(next: typeof tab.value) {
+  tab.value = next
+  if (next === "catalog" && selected.value) {
+    await loadCatalog(shopId(selected.value))
+  }
+}
+
+async function toggleShopProduct(p: Record<string, unknown>, is_active: boolean) {
+  const id = Number(p.id)
+  if (!id || !selected.value) return
+  busy.value = true
+  try {
+    await api.admin.updateProduct(id, { is_active })
+    toast.success(is_active ? "Product activated" : "Product deactivated")
+    await loadCatalog(shopId(selected.value))
+  } catch (e) {
+    toast.error("Update failed", apiError(e))
+  } finally {
+    busy.value = false
+  }
+}
+
+async function deleteShopProduct(p: Record<string, unknown>) {
+  const id = Number(p.id)
+  if (!id || !selected.value) return
+  const okDel = await confirm({
+    title: "Delete product",
+    message: `Remove “${p.name || id}” from this shop catalog?`,
+    confirmText: "Delete",
+    tone: "danger",
+  })
+  if (!okDel) return
+  busy.value = true
+  try {
+    await api.admin.deleteProduct(id)
+    toast.success("Product deleted")
+    expandedProductId.value = null
+    await loadCatalog(shopId(selected.value))
+  } catch (e) {
+    toast.error("Delete failed", apiError(e))
+  } finally {
+    busy.value = false
+  }
+}
+
+async function toggleShopBanner(b: Record<string, unknown>, is_active: boolean) {
+  const id = Number(b.id)
+  if (!id || !selected.value) return
+  busy.value = true
+  try {
+    await api.admin.shopBannerActive(shopId(selected.value), id, is_active)
+    toast.success(is_active ? "Banner on" : "Banner off")
+    await loadCatalog(shopId(selected.value))
+  } catch (e) {
+    toast.error("Update failed", apiError(e))
+  } finally {
+    busy.value = false
+  }
+}
+
+async function toggleShopCoupon(c: Record<string, unknown>, is_active: boolean) {
+  const id = Number(c.id)
+  if (!id || !selected.value) return
+  busy.value = true
+  try {
+    await api.admin.shopCouponActive(shopId(selected.value), id, is_active)
+    toast.success(is_active ? "Offer on" : "Offer off")
+    await loadCatalog(shopId(selected.value))
+  } catch (e) {
+    toast.error("Update failed", apiError(e))
+  } finally {
+    busy.value = false
+  }
+}
+
 async function loadAccount(id: number) {
   accountLoading.value = true
   try {
@@ -358,11 +475,16 @@ async function openShop(s: Record<string, unknown>) {
   selected.value = s
   detailOpen.value = true
   tab.value = "overview"
+  catalogSection.value = "products"
+  catalog.value = null
+  expandedProductId.value = null
   approveForm.credit_allowed = s.credit_allowed !== false
   approveForm.credit_limit = Number(s.credit_limit) || 25000
   collect.amount = Number(s.outstanding_balance) > 0 ? Number(s.outstanding_balance) : 0
   collect.note = ""
   await loadAccount(shopId(s))
+  // Prefetch catalog so the Catalog tab has counts ready
+  void loadCatalog(shopId(s))
 }
 
 function setCollectAmount(n: number) {
@@ -412,6 +534,29 @@ async function reject(s: Record<string, unknown>) {
   } catch (e) {
     error.value = apiError(e)
     toast.error("Reject failed", apiError(e))
+  } finally {
+    busy.value = false
+  }
+}
+
+function sellSubOf(s: Record<string, unknown>) {
+  return String(s.sell_subscription_status || "none")
+}
+
+async function setSellSub(s: Record<string, unknown>, status: string) {
+  busy.value = true
+  error.value = ""
+  try {
+    const id = shopId(s)
+    await api.admin.setSellSubscription(id, status)
+    toast.success(`Sell subscription → ${status}`)
+    patchListRow(shops, id, { sell_subscription_status: status }, "user_id")
+    await load({ quiet: true })
+    const row = shops.value.find((x) => shopId(x) === id)
+    if (row) await openShop(row)
+  } catch (e) {
+    error.value = apiError(e)
+    toast.error("Sell subscription update failed", apiError(e))
   } finally {
     busy.value = false
   }
@@ -517,6 +662,14 @@ const onAdminEvent = (data: Record<string, unknown>) => {
     applyLiveShop(data)
     return
   }
+  if (kind === "shop_hours_closed" && data.user_id != null) {
+    const uid = Number(data.user_id)
+    patchListRow(shops, uid, { is_open: false }, "user_id")
+    if (selected.value && shopId(selected.value) === uid) {
+      selected.value = { ...selected.value, is_open: false }
+    }
+    return
+  }
   if (kind === "shop_collection" && data.user_id != null) {
     const uid = Number(data.user_id)
     patchListRow(shops, uid, { outstanding_balance: data.outstanding_balance }, "user_id")
@@ -536,16 +689,30 @@ const onAdminEvent = (data: Record<string, unknown>) => {
   }
 }
 
+const onUserPresence = (data: Record<string, unknown>) => {
+  const uid = Number(data?.user_id)
+  if (!Number.isFinite(uid) || uid <= 0) return
+  const online = Boolean(data?.online ?? data?.is_online)
+  const idx = shops.value.findIndex((s) => shopId(s) === uid)
+  if (idx < 0) return
+  patchListRow(shops, uid, { is_online: online }, "user_id")
+  if (selected.value && shopId(selected.value) === uid) {
+    selected.value = { ...selected.value, is_online: online }
+  }
+}
+
 onMounted(() => {
   void load()
   liveSocket = connect()
   liveSocket?.on("admin_event", onAdminEvent)
+  liveSocket?.on("user_presence", onUserPresence)
   pollId = window.setInterval(() => {
     if (document.visibilityState === "visible") void load({ quiet: true })
   }, 12000)
 })
 onBeforeUnmount(() => {
   liveSocket?.off("admin_event", onAdminEvent)
+  liveSocket?.off("user_presence", onUserPresence)
   if (pollId) window.clearInterval(pollId)
 })
 </script>
@@ -687,6 +854,8 @@ onBeforeUnmount(() => {
           <thead>
             <tr class="bg-cream/80 text-left text-[0.68rem] uppercase tracking-wider text-[var(--muted)]">
               <th class="px-4 py-3">Shop</th>
+              <th class="px-4 py-3">Live</th>
+              <th class="px-4 py-3">Store</th>
               <th class="px-4 py-3">Status</th>
               <th class="px-4 py-3">Phone</th>
               <th class="px-4 py-3">Address</th>
@@ -723,8 +892,7 @@ onBeforeUnmount(() => {
                     {{ String(s.shop_name || "?").slice(0, 1).toUpperCase() }}
                   </span>
                   <div class="min-w-0">
-                    <p class="m-0 flex items-center gap-2 font-semibold text-chocolate">
-                      <span class="inline-block size-2 shrink-0 rounded-full" :class="s.is_online ? 'bg-emerald-500' : 'bg-stone-300'" />
+                    <p class="m-0 font-semibold text-chocolate">
                       {{ s.shop_name || s.name || "—" }}
                     </p>
                     <p class="m-0 text-xs text-[var(--muted)]">{{ s.owner_name || "—" }}</p>
@@ -734,6 +902,24 @@ onBeforeUnmount(() => {
                     </div>
                   </div>
                 </div>
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class="sc-badge inline-flex items-center gap-1.5"
+                  :class="s.is_online ? 'bg-emerald-100 text-emerald-900' : 'bg-cream text-[var(--muted)]'"
+                >
+                  <span class="inline-block size-1.5 rounded-full" :class="s.is_online ? 'bg-emerald-500' : 'bg-stone-300'" />
+                  {{ s.is_online ? "Online" : "Offline" }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class="sc-badge"
+                  :class="s.is_open === false ? 'bg-cream text-[var(--muted)]' : 'bg-honey/25 text-cocoa'"
+                  :title="`${s.shop_open_time || '09:00'} – ${s.shop_close_time || '21:00'}`"
+                >
+                  {{ s.is_open === false ? "Closed" : "Open" }}
+                </span>
               </td>
               <td class="px-4 py-3">
                 <span class="sc-badge" :class="badgeClass(statusOf(s))">{{ statusLabel(statusOf(s)) }}</span>
@@ -777,16 +963,226 @@ onBeforeUnmount(() => {
               type="button"
               class="rounded-md px-3 py-1.5 text-xs font-semibold"
               :class="tab === t.key ? 'bg-cocoa text-cream' : 'text-cocoa hover:bg-cream'"
-              @click="tab = t.key"
+              @click="setDrawerTab(t.key)"
             >
               {{ t.label }}
             </button>
           </div>
 
-          <p v-if="accountLoading" class="text-sm text-[var(--muted)]">Loading account…</p>
+          <p v-if="accountLoading && tab !== 'catalog'" class="text-sm text-[var(--muted)]">Loading account…</p>
+
+          <!-- CATALOG -->
+          <template v-else-if="tab === 'catalog'">
+            <p v-if="catalogLoading" class="text-sm text-[var(--muted)]">Loading shop catalog…</p>
+            <template v-else>
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex flex-wrap gap-1">
+                  <button
+                    v-for="s in [
+                      { key: 'products' as const, label: `Products (${catalogCounts.products || 0})` },
+                      { key: 'offers' as const, label: `Offers (${catalogCounts.coupons || 0})` },
+                      { key: 'banners' as const, label: `Banners (${catalogCounts.banners || 0})` },
+                      { key: 'sales' as const, label: `Sales (${catalogCounts.sales || 0})` },
+                    ]"
+                    :key="s.key"
+                    type="button"
+                    class="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                    :class="catalogSection === s.key ? 'bg-honey/40 text-cocoa' : 'bg-cream text-[var(--muted)]'"
+                    @click="catalogSection = s.key"
+                  >
+                    {{ s.label }}
+                  </button>
+                </div>
+                <NuxtLink
+                  class="text-xs font-semibold text-cocoa underline"
+                  :to="`/products?supplier_user_id=${shopId(selected)}`"
+                >
+                  Open products
+                </NuxtLink>
+              </div>
+
+              <!-- Products -->
+              <template v-if="catalogSection === 'products'">
+                <EmptyState
+                  v-if="!catalogProducts.length"
+                  title="No products"
+                  body="When this shop adds sell products, they show up here."
+                />
+                <ul v-else class="m-0 list-none space-y-2 p-0">
+                  <li
+                    v-for="p in catalogProducts"
+                    :key="String(p.id)"
+                    class="rounded-md border border-[var(--line)] px-3 py-2"
+                  >
+                    <button
+                      type="button"
+                      class="flex w-full items-start gap-3 text-left"
+                      @click="expandedProductId = expandedProductId === Number(p.id) ? null : Number(p.id)"
+                    >
+                      <img
+                        v-if="p.cover_image_url"
+                        :src="String(p.cover_image_url)"
+                        alt=""
+                        class="h-14 w-14 shrink-0 rounded-md object-cover ring-1 ring-[var(--line)]"
+                      >
+                      <span
+                        v-else
+                        class="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-cream text-xs text-[var(--muted)] ring-1 ring-[var(--line)]"
+                      >
+                        —
+                      </span>
+                      <div class="min-w-0 flex-1">
+                        <p class="m-0 font-semibold text-chocolate">{{ p.name }}</p>
+                        <p class="m-0 text-xs text-[var(--muted)]">
+                          {{ money(Number(p.selling_price)) }} · stock {{ p.stock_qty ?? 0 }}
+                          <span v-if="p.is_active === false"> · inactive</span>
+                        </p>
+                        <p v-if="p.short_description" class="m-0 mt-0.5 line-clamp-2 text-xs text-[var(--muted)]">
+                          {{ p.short_description }}
+                        </p>
+                      </div>
+                    </button>
+                    <div v-if="expandedProductId === Number(p.id)" class="mt-2 space-y-2 border-t border-[var(--line)] pt-2">
+                      <pre
+                        v-if="p.description"
+                        class="m-0 whitespace-pre-wrap font-sans text-xs leading-relaxed text-chocolate"
+                      >{{ p.description }}</pre>
+                      <p v-else class="m-0 text-xs text-[var(--muted)]">No details</p>
+                      <p v-if="p.weight" class="m-0 text-xs text-[var(--muted)]">Weight · {{ p.weight }}</p>
+                      <div class="flex flex-wrap gap-2">
+                        <UButton
+                          type="button"
+                          size="xs"
+                          color="neutral"
+                          variant="outline"
+                          :disabled="busy"
+                          :label="p.is_active === false ? 'Activate' : 'Deactivate'"
+                          @click="toggleShopProduct(p, p.is_active === false)"
+                        />
+                        <UButton
+                          type="button"
+                          size="xs"
+                          color="error"
+                          variant="soft"
+                          label="Delete"
+                          :disabled="busy"
+                          @click="deleteShopProduct(p)"
+                        />
+                        <NuxtLink
+                          class="inline-flex items-center rounded-md px-2 text-xs font-semibold text-cocoa underline"
+                          :to="`/products?q=${encodeURIComponent(String(p.name || ''))}&supplier_user_id=${shopId(selected)}`"
+                        >
+                          Edit in Products
+                        </NuxtLink>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </template>
+
+              <!-- Offers -->
+              <template v-else-if="catalogSection === 'offers'">
+                <EmptyState
+                  v-if="!catalogCoupons.length"
+                  title="No offers"
+                  body="Shop coupons created from the retailer Sell tab appear here."
+                />
+                <ul v-else class="m-0 list-none space-y-2 p-0 text-sm">
+                  <li
+                    v-for="c in catalogCoupons"
+                    :key="String(c.id)"
+                    class="flex items-center justify-between gap-3 rounded-md border border-[var(--line)] px-3 py-2"
+                  >
+                    <div class="min-w-0">
+                      <p class="m-0 font-semibold">{{ c.code }}</p>
+                      <p class="m-0 text-xs text-[var(--muted)]">
+                        {{ c.title }} · {{ c.value }}{{ c.coupon_type === 'percentage' ? '%' : '' }}
+                        <span v-if="c.is_active === false"> · off</span>
+                      </p>
+                    </div>
+                    <UButton
+                      type="button"
+                      size="xs"
+                      color="neutral"
+                      variant="outline"
+                      :disabled="busy"
+                      :label="c.is_active === false ? 'Activate' : 'Deactivate'"
+                      @click="toggleShopCoupon(c, c.is_active === false)"
+                    />
+                  </li>
+                </ul>
+              </template>
+
+              <!-- Banners -->
+              <template v-else-if="catalogSection === 'banners'">
+                <EmptyState
+                  v-if="!catalogBanners.length"
+                  title="No banners"
+                  body="Shop banners from the retailer Sell tab appear here."
+                />
+                <ul v-else class="m-0 list-none space-y-2 p-0 text-sm">
+                  <li
+                    v-for="b in catalogBanners"
+                    :key="String(b.id)"
+                    class="flex items-center gap-3 rounded-md border border-[var(--line)] px-3 py-2"
+                  >
+                    <img
+                      v-if="b.image_url"
+                      :src="String(b.image_url)"
+                      alt=""
+                      class="h-12 w-16 shrink-0 rounded object-cover ring-1 ring-[var(--line)]"
+                    >
+                    <div class="min-w-0 flex-1">
+                      <p class="m-0 font-semibold">{{ b.title }}</p>
+                      <p v-if="b.subtitle" class="m-0 text-xs text-[var(--muted)]">{{ b.subtitle }}</p>
+                    </div>
+                    <UButton
+                      type="button"
+                      size="xs"
+                      color="neutral"
+                      variant="outline"
+                      :disabled="busy"
+                      :label="b.is_active === false ? 'Activate' : 'Deactivate'"
+                      @click="toggleShopBanner(b, b.is_active === false)"
+                    />
+                  </li>
+                </ul>
+              </template>
+
+              <!-- B2C Sales -->
+              <template v-else>
+                <EmptyState
+                  v-if="!catalogSales.length"
+                  title="No customer sales"
+                  body="B2C orders for this shop show up here."
+                />
+                <ul v-else class="m-0 list-none space-y-2 p-0 text-sm">
+                  <li
+                    v-for="row in catalogSales"
+                    :key="String(saleOrder(row).id || Math.random())"
+                    class="rounded-md border border-[var(--line)] px-3 py-2"
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <p class="m-0 font-semibold">
+                          {{ saleOrder(row).order_number || `#${saleOrder(row).id}` }}
+                        </p>
+                        <p class="m-0 text-xs capitalize text-[var(--muted)]">
+                          {{ String(saleOrder(row).status || "").replace(/_/g, " ") }}
+                        </p>
+                      </div>
+                      <p class="m-0 font-semibold">
+                        {{ money(Number(saleOrder(row).final_amount)) }}
+                      </p>
+                    </div>
+                  </li>
+                </ul>
+              </template>
+            </template>
+          </template>
 
           <!-- OVERVIEW -->
-          <template v-else-if="tab === 'overview'">
+          <template v-else-if="tab === 'overview' && !accountLoading">
             <div class="flex items-center gap-3 rounded-md border border-[var(--line)] p-3">
               <img
                 v-if="selected.shop_logo_url"
@@ -805,9 +1201,26 @@ onBeforeUnmount(() => {
                 <p class="m-0 text-sm text-[var(--muted)]">{{ selected.owner_name || "—" }}</p>
                 <div class="mt-1 flex flex-wrap gap-1">
                   <span class="sc-badge" :class="badgeClass(statusOf(selected))">{{ statusLabel(statusOf(selected)) }}</span>
+                  <span
+                    class="sc-badge inline-flex items-center gap-1.5"
+                    :class="selected.is_online ? 'bg-emerald-100 text-emerald-900' : 'bg-cream text-[var(--muted)]'"
+                  >
+                    <span class="inline-block size-1.5 rounded-full" :class="selected.is_online ? 'bg-emerald-500' : 'bg-stone-300'" />
+                    {{ selected.is_online ? "Online" : "Offline" }}
+                  </span>
+                  <span
+                    class="sc-badge"
+                    :class="selected.is_open === false ? 'bg-cream text-[var(--muted)]' : 'bg-honey/25 text-cocoa'"
+                  >
+                    {{ selected.is_open === false ? "Closed" : "Open" }}
+                  </span>
                   <span v-if="isSupplier(selected)" class="sc-badge bg-cream text-cocoa">Supplier</span>
                   <span v-if="selected.is_blocked" class="sc-badge bg-danger/15 text-danger">Blocked</span>
                 </div>
+                <p class="m-0 mt-1 text-xs text-[var(--muted)]">
+                  Hours {{ selected.shop_open_time || "09:00" }} – {{ selected.shop_close_time || "21:00" }}
+                  <span v-if="selected.shop_days"> · {{ selected.shop_days }}</span>
+                </p>
               </div>
             </div>
 
@@ -902,7 +1315,48 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <div v-else class="space-y-3 rounded-md border border-[var(--line)] p-3">
+            <div
+              v-if="statusOf(selected) === 'approved'"
+              class="space-y-3 rounded-md border border-honey/40 bg-honey/10 p-3"
+            >
+              <p class="m-0 text-sm font-semibold text-cocoa">
+                Sell subscription:
+                <span class="font-normal">{{ sellSubOf(selected) }}</span>
+              </p>
+              <p class="m-0 text-xs text-[var(--muted)]">
+                Lets the shop add categories, products, banners and coupons for their customers.
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <UButton
+                  type="button"
+                  :disabled="busy || sellSubOf(selected) === 'approved'"
+                  @click="setSellSub(selected, 'approved')"
+                >
+                  Approve sell
+                </UButton>
+                <UButton
+                  type="button"
+                  color="neutral"
+                  variant="outline"
+                  :disabled="busy || sellSubOf(selected) === 'rejected'"
+                  @click="setSellSub(selected, 'rejected')"
+                >
+                  Reject sell
+                </UButton>
+                <UButton
+                  v-if="sellSubOf(selected) === 'pending'"
+                  type="button"
+                  color="primary"
+                  variant="soft"
+                  :disabled="busy"
+                  @click="setSellSub(selected, 'none')"
+                >
+                  Clear request
+                </UButton>
+              </div>
+            </div>
+
+            <div v-if="statusOf(selected) === 'approved' || statusOf(selected) === 'rejected'" class="space-y-3 rounded-md border border-[var(--line)] p-3">
               <p class="m-0 text-sm font-semibold text-chocolate">Credit & access</p>
               <label>
                 <span class="sc-label">Credit limit ₹</span>

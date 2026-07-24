@@ -60,7 +60,25 @@ async function assignRider() {
   error.value = ""
   try {
     await api.admin.assignDelivery(id.value, Number(riderId.value))
-    info.value = "Rider assigned"
+    info.value = "Rider assigned (forced) — job pushed live"
+    await load()
+  } catch (e) {
+    error.value = apiError(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+async function offerRider() {
+  if (!riderId.value) {
+    error.value = "Pick a rider first"
+    return
+  }
+  busy.value = true
+  error.value = ""
+  try {
+    await api.admin.offerDelivery(id.value, Number(riderId.value))
+    info.value = "Offer sent — rider has 45s to accept"
     await load()
   } catch (e) {
     error.value = apiError(e)
@@ -194,9 +212,14 @@ onBeforeUnmount(() => {
               {{ r.name || r.phone }} {{ r.vehicle_number ? `· ${r.vehicle_number}` : "" }}
             </option>
           </select>
-          <UButton type="button" color="primary" variant="soft" class=" mt-2" :disabled="busy || !riderId" @click="assignRider">
-            Assign delivery
-          </UButton>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <UButton type="button" color="primary" variant="soft" :disabled="busy || !riderId" @click="assignRider">
+              Assign (force)
+            </UButton>
+            <UButton type="button" color="neutral" variant="outline" :disabled="busy || !riderId" @click="offerRider">
+              Offer (45s)
+            </UButton>
+          </div>
         </div>
 
         <div class="flex flex-wrap gap-2 border-t border-[var(--line)] pt-4">

@@ -28,6 +28,8 @@ export default defineNuxtConfig({
   },
   icon: {
     serverBundle: "local",
+    // Avoid clash with nginx `location /api/` → gateway (icons would 404).
+    localApiEndpoint: "/_nuxt_icon",
   },
   app: {
     head: {

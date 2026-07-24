@@ -14,6 +14,7 @@ const error = ref("")
 const products = ref<Record<string, unknown>[]>([])
 const categories = ref<Record<string, unknown>[]>([])
 const wholesalers = ref<Record<string, unknown>[]>([])
+const units = ref<{ code: string; label: string }[]>([])
 const showForm = ref(false)
 const editId = ref<number | null>(null)
 
@@ -23,10 +24,22 @@ const filterCategoryId = computed(() => {
   return Number.isFinite(n) && n > 0 ? n : null
 })
 
+const filterSupplierUserId = computed(() => {
+  const raw = route.query.supplier_user_id
+  const n = Number(Array.isArray(raw) ? raw[0] : raw)
+  return Number.isFinite(n) && n > 0 ? n : null
+})
+
 const filterCategoryName = computed(() => {
   if (!filterCategoryId.value) return ""
   const cat = categories.value.find((c) => Number(c.id) === filterCategoryId.value)
   return cat ? String(cat.name || "") : `Category #${filterCategoryId.value}`
+})
+
+const filterShopName = computed(() => {
+  if (!filterSupplierUserId.value) return ""
+  const shop = wholesalers.value.find((s) => Number(s.user_id) === filterSupplierUserId.value)
+  return shop ? String(shop.shop_name || shop.name || "") : `Shop #${filterSupplierUserId.value}`
 })
 
 const form = reactive({
@@ -40,7 +53,7 @@ const form = reactive({
   purchase_cost: 0,
   stock_qty: 0,
   min_order_qty: 1,
-  unit_label: "pkt",
+  unit_label: "pcs",
   short_description: "",
   fulfillment_type: "both",
   is_active: true,
@@ -57,7 +70,7 @@ function resetForm() {
     stock_qty: 0,
     selling_price: 0,
     min_order_qty: 1,
-    unit_label: "pkt",
+    unit_label: units.value[0]?.code || "pcs",
     short_description: "",
     fulfillment_type: "both",
     is_active: true,
@@ -86,16 +99,23 @@ async function load(quiet = false) {
   if (!quiet) loading.value = true
   error.value = ""
   try {
-    const [data, cats, shops] = await Promise.all([
-      api.admin.products(q.value || undefined, 1, filterCategoryId.value || undefined),
+    const [data, cats, shops, unitRows] = await Promise.all([
+      api.admin.products(
+        q.value || undefined,
+        1,
+        filterCategoryId.value || undefined,
+        filterSupplierUserId.value || undefined,
+      ),
       api.admin.categories().catch(() => []),
       api.admin.shops().catch(() => []),
+      api.admin.units().catch(() => []),
     ])
     const list = Array.isArray(data)
       ? data
       : (data as { items?: unknown[] })?.items || (data as { products?: unknown[] })?.products || []
     products.value = list as Record<string, unknown>[]
     categories.value = Array.isArray(cats) ? (cats as Record<string, unknown>[]) : []
+    units.value = Array.isArray(unitRows) ? unitRows : []
     const shopList = Array.isArray(shops) ? (shops as Record<string, unknown>[]) : []
     wholesalers.value = shopList.filter(
       (s) => s.is_wholesaler !== false && String(s.approval_status || "approved") === "approved",
@@ -115,7 +135,13 @@ function clearCategoryFilter() {
   void router.replace({ query: next })
 }
 
-watch(filterCategoryId, () => {
+function clearShopFilter() {
+  const next = { ...route.query }
+  delete next.supplier_user_id
+  void router.replace({ query: next })
+}
+
+watch([filterCategoryId, filterSupplierUserId], () => {
   void load()
 })
 
@@ -133,12 +159,21 @@ function startEdit(p: Record<string, unknown>) {
     purchase_cost: Number(p.purchase_cost) || 0,
     stock_qty: Number(p.stock_qty) || 0,
     min_order_qty: Number(p.min_order_qty) || 1,
-    unit_label: String(p.unit_label || "pkt"),
+    unit_label: String(p.unit_label || units.value[0]?.code || "pcs"),
     short_description: String(p.short_description || ""),
     fulfillment_type: String(p.fulfillment_type || "both"),
     is_active: p.is_active !== false,
   })
 }
+
+const unitOptions = computed(() => {
+  const rows = [...units.value]
+  const cur = String(form.unit_label || "").trim()
+  if (cur && !rows.some((u) => u.code === cur)) {
+    rows.unshift({ code: cur, label: cur })
+  }
+  return rows
+})
 
 async function save() {
   error.value = ""
@@ -220,8 +255,16 @@ onMounted(() => load())
 <template>
   <div>
     <PageHeader
-      :title="filterCategoryId ? `Products in ${filterCategoryName}` : 'Products'"
-      :subtitle="filterCategoryId ? 'Filtered by category — clear filter to see the full catalog.' : 'One SKU per shop brand — buy from that wholesaler, then resell'"
+      :title="filterSupplierUserId
+        ? `Products · ${filterShopName || 'Shop'}`
+        : filterCategoryId
+          ? `Products in ${filterCategoryName}`
+          : 'Products'"
+      :subtitle="filterSupplierUserId
+        ? 'Filtered by shop catalog — clear filter to see all products.'
+        : filterCategoryId
+          ? 'Filtered by category — clear filter to see the full catalog.'
+          : 'One SKU per shop brand — buy from that wholesaler, then resell'"
     >
       <template #actions>
         <UButton
@@ -229,8 +272,16 @@ onMounted(() => load())
           type="button"
           color="neutral"
           variant="outline"
-          label="Clear filter"
+          label="Clear category"
           @click="clearCategoryFilter"
+        />
+        <UButton
+          v-if="filterSupplierUserId"
+          type="button"
+          color="neutral"
+          variant="outline"
+          label="Clear shop"
+          @click="clearShopFilter"
         />
         <UButton to="/categories" color="neutral" variant="outline">Categories</UButton>
         <UButton to="/inventory" color="primary" variant="soft">Inventory</UButton>
@@ -256,7 +307,12 @@ onMounted(() => load())
         </select>
       </label>
       <label class="sm:col-span-2"><span class="sc-label">Name</span><input v-model="form.name" class="sc-input" required placeholder="e.g. Mango Pickle 500g — Sahu"></label>
-      <label><span class="sc-label">Unit</span><input v-model="form.unit_label" class="sc-input"></label>
+      <label>
+        <span class="sc-label">Unit</span>
+        <select v-model="form.unit_label" class="sc-input">
+          <option v-for="u in unitOptions" :key="u.code" :value="u.code">{{ u.label }}</option>
+        </select>
+      </label>
       <label>
         <span class="sc-label">Supplier shop (wholesaler)</span>
         <select v-model.number="form.supplier_user_id" class="sc-input" @change="onSupplier">
