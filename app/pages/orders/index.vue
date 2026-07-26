@@ -633,7 +633,7 @@ function selectRow(o: Record<string, unknown>) {
               :to="`/orders/${selectedId}`"
               color="secondary"
               block
-              label="Open order actions"
+              label="Assign rider & update status"
               trailing-icon="i-lucide-arrow-right"
             />
           </div>
@@ -646,7 +646,7 @@ function selectRow(o: Record<string, unknown>) {
             </span>
             <p class="font-display mt-4 text-lg text-chocolate">Select an order</p>
             <p class="mt-1 text-xs text-[var(--muted)]">
-              Live map, rider path, ETA alerts, and order details open here.
+              Then open Assign rider & update status to control fulfillment.
             </p>
           </div>
         </div>
@@ -689,7 +689,7 @@ function selectRow(o: Record<string, unknown>) {
             <span>{{ money(Number(line.total_price)) }}</span>
           </li>
         </ul>
-        <UButton :to="`/orders/${selectedId}`" color="secondary" block label="Open order actions" />
+        <UButton :to="`/orders/${selectedId}`" color="secondary" block label="Assign rider & update status" />
       </div>
     </aside>
   </div>

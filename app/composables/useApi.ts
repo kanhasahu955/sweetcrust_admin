@@ -70,11 +70,13 @@ export function useApi() {
 
     // Admin lists must never reuse a cached GET after create/update/delete.
     // Keep headers CORS-simple (no Cache-Control/Pragma) so browsers skip brittle preflights.
+    // Hard timeout so a hung microservice can't freeze every page for 60s+.
     const fetchOpts = {
       method: opts.method || "GET",
       body: opts.body as Record<string, unknown> | undefined,
       headers,
       cache: "no-store" as RequestCache,
+      timeout: 12_000,
     }
 
     try {

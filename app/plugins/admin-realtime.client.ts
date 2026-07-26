@@ -204,11 +204,16 @@ export default defineNuxtPlugin(() => {
   )
 
   if (import.meta.client) {
+    let focusTimer: ReturnType<typeof setTimeout> | null = null
     window.addEventListener("focus", () => {
-      if (auth.accessToken) {
+      if (!auth.accessToken) return
+      // Avoid refetch storms when alt-tabbing / DevTools focus.
+      if (focusTimer) return
+      focusTimer = setTimeout(() => {
+        focusTimer = null
         void refreshChatUnread()
         bumpDashboard()
-      }
+      }, 1500)
     })
   }
 })

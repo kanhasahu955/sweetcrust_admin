@@ -20,20 +20,27 @@ let refreshTimer: ReturnType<typeof setTimeout> | null = null
 const nowTick = ref(Date.now())
 let tickTimer: ReturnType<typeof setInterval> | null = null
 
-async function load(quiet = false) {
+async function load(quiet = false, extras = true) {
   if (quiet) refreshing.value = true
-  else loading.value = true
+  else if (!data.value) loading.value = true
   error.value = ""
   try {
-    const [d, s, r] = await Promise.all([
-      api.admin.dashboard(),
-      api.admin.shops().catch(() => []),
-      api.admin.reports("weekly").catch(() => null),
-    ])
+    // Critical path first — never block the page on shops/reports (those can hang).
+    const d = await api.admin.dashboard()
     data.value = d
-    shops.value = Array.isArray(s) ? (s as Record<string, unknown>[]) : []
-    report.value = r as Record<string, unknown> | null
     lastSyncedAt.value = Date.now()
+    loading.value = false
+
+    // Socket/focus bumps only need KPIs. Full extras on first load / manual refresh.
+    if (extras) {
+      const [s, r] = await Promise.all([
+        api.admin.shops().catch(() => []),
+        api.admin.reports("weekly").catch(() => null),
+      ])
+      shops.value = Array.isArray(s) ? (s as Record<string, unknown>[]) : []
+      report.value = r as Record<string, unknown> | null
+      lastSyncedAt.value = Date.now()
+    }
   } catch (e) {
     error.value = apiError(e)
   } finally {
@@ -44,9 +51,10 @@ async function load(quiet = false) {
 
 function scheduleRefresh() {
   if (refreshTimer) clearTimeout(refreshTimer)
+  // Debounce socket storms — KPI-only, not shops+reports every event.
   refreshTimer = setTimeout(() => {
-    void load(true)
-  }, 450)
+    void load(true, false)
+  }, 1200)
 }
 
 watch(dashboardBump, () => {

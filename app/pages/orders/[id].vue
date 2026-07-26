@@ -15,7 +15,7 @@ const nextStatus = ref("")
 const riderId = ref<number | "">("")
 const busy = ref(false)
 const paymentUrl = ref("")
-const showOps = ref(false)
+const showOps = ref(true)
 
 const TRACK_STEPS = [
   { key: "placed", label: "Received" },
@@ -343,7 +343,13 @@ onBeforeUnmount(() => {
     <div class="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
       <UButton to="/orders" color="neutral" variant="outline" icon="i-lucide-arrow-left" label="Back" />
       <div class="flex flex-wrap gap-2">
-        <UButton color="neutral" variant="outline" :label="showOps ? 'Hide ops' : 'Ops'" @click="showOps = !showOps" />
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-bike"
+          :label="showOps ? 'Hide status & rider' : 'Status & rider'"
+          @click="showOps = !showOps"
+        />
         <UButton color="neutral" variant="outline" icon="i-lucide-printer" label="Print slip" @click="printSlip" />
         <UButton color="secondary" :loading="busy" label="Generate invoice" @click="makeInvoice" />
       </div>
