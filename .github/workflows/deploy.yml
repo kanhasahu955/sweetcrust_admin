@@ -81,7 +81,13 @@ jobs:
           sed -i 's/^[[:space:]]*//' .env.production
           chmod 600 .env.production
           echo "API base: $(grep NUXT_PUBLIC_API_BASE .env.production)"
-          echo "Maps key set: $(grep -q '^NUXT_PUBLIC_GOOGLE_MAPS_API_KEY=.\+' .env.production && echo yes || echo no)"
+          if grep -qE '^NUXT_PUBLIC_GOOGLE_MAPS_API_KEY=.+' .env.production; then
+            echo "Maps key set: yes"
+          else
+            echo "Maps key set: no" >&2
+            echo "Add GitHub Actions secret NUXT_PUBLIC_GOOGLE_MAPS_API_KEY (same Maps JS key as local admin/.env.production)." >&2
+            exit 1
+          fi
 
       - name: Deploy
         env:

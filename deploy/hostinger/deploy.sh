@@ -33,6 +33,14 @@ need_env() {
     echo "Missing .env.production — copy .env.production.example" >&2
     exit 1
   fi
+  # Maps key is baked/served via NUXT_PUBLIC_* — empty key = blank live map in prod.
+  local maps_key
+  maps_key="$(grep -E '^NUXT_PUBLIC_GOOGLE_MAPS_API_KEY=' .env.production | head -1 | cut -d= -f2- | tr -d '\r' | tr -d "\"'")"
+  if [[ -z "${maps_key}" ]]; then
+    echo "NUXT_PUBLIC_GOOGLE_MAPS_API_KEY is empty in .env.production" >&2
+    echo "Set it locally, or add GitHub secret NUXT_PUBLIC_GOOGLE_MAPS_API_KEY, then redeploy." >&2
+    exit 1
+  fi
 }
 
 compose_up() {
