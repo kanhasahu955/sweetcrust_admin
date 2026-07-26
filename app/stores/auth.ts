@@ -28,6 +28,7 @@ export const useAuthStore = defineStore("auth", {
       this.hydrated = true
     },
     setTokens(access: string, refresh: string, user?: User | null) {
+      if (!access || !refresh) return
       this.accessToken = access
       this.refreshToken = refresh
       if (user) this.user = user

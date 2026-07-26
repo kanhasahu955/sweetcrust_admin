@@ -11,7 +11,6 @@ export default defineAppConfig({
     },
     button: {
       slots: {
-        // Fixed 12px — matches old sc-btn (not Nuxt pill radii)
         base: "rounded-[12px] font-semibold shadow-sm",
         label: "truncate text-inherit",
       },
@@ -25,30 +24,34 @@ export default defineAppConfig({
           color: "primary",
           variant: "solid",
           class:
-            "!text-cream !bg-cocoa-500 hover:!bg-cocoa-600 active:!bg-cocoa-600 focus-visible:outline-cocoa-500/30",
+            "!text-cream !bg-cocoa-500 hover:!bg-cocoa-600 active:!bg-cocoa-600 focus-visible:outline-honey/30",
         },
         {
           color: "primary",
           variant: "soft",
           class:
-            "!text-chocolate !bg-honey/20 hover:!bg-honey/35 active:!bg-honey/35 focus-visible:outline-honey/40",
+            "!text-chocolate !bg-honey/15 hover:!bg-honey/28 active:!bg-honey/28 focus-visible:outline-honey/40",
         },
         {
           color: "primary",
           variant: "outline",
           class:
-            "ring-[var(--line)] !text-chocolate !bg-white/70 hover:!bg-cream focus-visible:outline-honey/40",
+            "ring-[var(--line)] !text-chocolate !bg-white/80 hover:!bg-cream focus-visible:outline-honey/40",
+        },
+        {
+          color: "secondary",
+          variant: "solid",
+          class: "!text-white !bg-honey-500 hover:!bg-honey-600",
         },
         {
           color: "neutral",
           variant: "outline",
           class:
-            "ring-[var(--line)] !text-chocolate !bg-white/70 hover:!bg-cream focus-visible:outline-honey/40",
+            "ring-[var(--line)] !text-chocolate !bg-white/80 hover:!bg-cream focus-visible:outline-honey/40",
         },
         {
           color: "neutral",
           variant: "ghost",
-          // Light surfaces — chocolate text (sidebar overrides locally)
           class: "!text-chocolate hover:!bg-cream/80",
         },
         {
@@ -65,7 +68,7 @@ export default defineAppConfig({
     },
     card: {
       slots: {
-        root: "rounded-[16px] overflow-hidden bg-[var(--surface)] ring-1 ring-[var(--line)] shadow-[0_10px_30px_-18px_rgba(42,26,18,0.35)] divide-y divide-[var(--line)]",
+        root: "rounded-[16px] overflow-hidden bg-[var(--surface)] ring-1 ring-[var(--line)] shadow-[0_12px_32px_-16px_rgba(74,44,42,0.28)] divide-y divide-[var(--line)]",
         header: "p-4 sm:px-6",
         title: "font-display text-xl text-chocolate font-semibold",
         description: "mt-1 text-sm text-[var(--muted)]",

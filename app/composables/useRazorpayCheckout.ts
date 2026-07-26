@@ -1,4 +1,11 @@
-/** Load Razorpay Checkout.js and open a payment modal. */
+/** Load Razorpay Checkout.js and open a payment modal (SweetCrust theme). */
+
+const BRAND = {
+  color: "#e9748e",
+  backdrop: "#FFF9F5",
+  name: "SweetCrust",
+  logoPath: "/brand/sweetcrust-logo.png",
+} as const
 
 type RazorpaySuccess = {
   razorpay_order_id: string
@@ -12,10 +19,17 @@ type RazorpayOptions = {
   currency?: string
   name?: string
   description?: string
+  image?: string
   order_id: string
-  prefill?: { name?: string; contact?: string }
+  prefill?: { name?: string; contact?: string; email?: string }
+  theme?: { color?: string; backdrop_color?: string; hide_topbar?: boolean }
   handler: (response: RazorpaySuccess) => void
-  modal?: { ondismiss?: () => void }
+  modal?: {
+    ondismiss?: () => void
+    backdropclose?: boolean
+    escape?: boolean
+    confirm_close?: boolean
+  }
 }
 
 declare global {
@@ -44,6 +58,11 @@ function loadScript(): Promise<void> {
   return loading
 }
 
+function brandLogoUrl() {
+  if (import.meta.server || typeof window === "undefined") return BRAND.logoPath
+  return `${window.location.origin}${BRAND.logoPath}`
+}
+
 export function useRazorpayCheckout() {
   async function openCheckout(opts: {
     key_id: string
@@ -51,6 +70,7 @@ export function useRazorpayCheckout() {
     amount_paise: number
     name?: string
     description?: string
+    prefill?: { name?: string; contact?: string; email?: string }
   }): Promise<RazorpaySuccess> {
     await loadScript()
     if (!window.Razorpay) throw new Error("Razorpay unavailable")
@@ -59,12 +79,19 @@ export function useRazorpayCheckout() {
         key: opts.key_id,
         amount: opts.amount_paise,
         currency: "INR",
-        name: opts.name || "SweetCrust",
+        name: opts.name || BRAND.name,
         description: opts.description || "Payment",
+        image: brandLogoUrl(),
         order_id: opts.razorpay_order_id,
+        prefill: opts.prefill,
+        theme: {
+          color: BRAND.color,
+          backdrop_color: BRAND.backdrop,
+        },
         handler: (response) => resolve(response),
         modal: {
           ondismiss: () => reject(new Error("Payment cancelled")),
+          backdropclose: false,
         },
       })
       rzp.open()

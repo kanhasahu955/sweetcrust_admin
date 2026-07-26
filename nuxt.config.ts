@@ -13,6 +13,10 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://127.0.0.1:8080",
       socketBase: process.env.NUXT_PUBLIC_SOCKET_BASE || "http://127.0.0.1:8081",
+      // Browser Maps JS key (restrict by HTTP referrer in Google Cloud).
+      // Falls back to server key for local dev only.
+      googleMapsApiKey:
+        process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY || "",
     },
   },
   colorMode: {
@@ -33,7 +37,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: "SweetCrust Admin",
+      title: "Bakery Ops",
       meta: [{ name: "description", content: "Village shop supply — owner console" }],
       link: [
         {

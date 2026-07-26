@@ -30,7 +30,6 @@ onMounted(() => {
   if (auth.accessToken) void refreshShopPending()
 })
 
-
 watch(
   () => route.path,
   (p) => {
@@ -38,16 +37,6 @@ watch(
   },
   { immediate: true },
 )
-
-async function logout() {
-  try {
-    await api.auth.logout(auth.refreshToken || undefined)
-  } catch {
-    /* ignore */
-  }
-  auth.clear()
-  navigateTo("/login")
-}
 
 function active(to: string) {
   if (to === "/dashboard") return route.path === "/dashboard" || route.path === "/"
@@ -62,38 +51,54 @@ function iconName(icon: string) {
 <template>
   <div
     v-if="open"
-    class="fixed inset-0 z-40 bg-chocolate/40 backdrop-blur-[2px] lg:hidden"
+    class="fixed inset-0 z-40 bg-[#1a100e]/50 backdrop-blur-[4px] lg:hidden"
     @click="$emit('close')"
   />
   <aside
-    class="fixed inset-y-0 left-0 z-50 flex h-[100dvh] w-[260px] flex-col border-r border-honey/20 bg-gradient-to-b from-[#2a1a12] via-chocolate to-[#120e0b] text-cream transition-transform duration-200 ease-out"
+    class="sc-shell-aside fixed inset-y-0 left-0 z-50 flex h-[100dvh] w-[272px] flex-col text-cream transition-transform duration-200 ease-out"
     :class="open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
   >
-    <div class="shrink-0 px-5 pb-5 pt-6">
-      <p class="font-display text-2xl font-semibold text-transparent bg-gradient-to-br from-[#fff8ee] via-honey to-[#e8a87c] bg-clip-text">
-        SweetCrust
-      </p>
-      <p class="mt-1 text-[0.68rem] uppercase tracking-[0.16em] text-cream/45">Owner ops console</p>
-      <p class="mt-3 rounded-lg bg-white/5 px-2.5 py-1.5 text-[0.65rem] leading-snug text-cream/50">
-        Buy stock → publish → shop orders → deliver → collect
-      </p>
+    <div class="relative shrink-0 px-4 pb-3 pt-5">
+      <div class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_at_top,_rgba(233,116,142,0.22),_transparent_70%)]" />
+      <NuxtLink
+        to="/dashboard"
+        class="relative flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-white/[0.09]"
+        @click="$emit('close')"
+      >
+        <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-[#fff9f5] shadow-sm ring-1 ring-white/20">
+          <BrandLogo size="sm" />
+        </span>
+        <span class="min-w-0">
+          <span class="block text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-[#f2a7ad]">Ops desk</span>
+          <span class="mt-0.5 block truncate text-sm font-semibold text-white">Daily control</span>
+        </span>
+      </NuxtLink>
     </div>
 
-    <p class="mb-1 shrink-0 px-5 text-[0.65rem] uppercase tracking-[0.12em] text-cream/35">Daily work</p>
-    <nav class="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 pb-4">
+    <p class="mb-1.5 shrink-0 px-5 text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-cream/35">
+      Daily work
+    </p>
+    <nav class="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-2.5 pb-4">
       <NuxtLink
         v-for="item in NAV_PRIMARY"
         :key="item.to"
         :to="item.to"
-        class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-cream/70 transition hover:bg-white/5 hover:text-white"
-        :class="active(item.to) ? 'bg-honey/25 text-white shadow-[inset_3px_0_0_#d4893a]' : ''"
+        class="group flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm text-cream/70 transition"
+        :class="active(item.to)
+          ? 'bg-[#e9748e]/20 text-white shadow-[inset_3px_0_0_#e9748e]'
+          : 'hover:bg-white/[0.06] hover:text-white'"
         @click="$emit('close')"
       >
-        <UIcon :name="iconName(item.icon)" class="size-4 shrink-0 text-honey" />
-        <span class="flex-1 truncate">{{ item.label }}</span>
+        <span
+          class="grid size-8 shrink-0 place-items-center rounded-lg transition"
+          :class="active(item.to) ? 'bg-[#e9748e]/35 text-white' : 'bg-white/[0.05] text-[#f2a7ad] group-hover:bg-white/10'"
+        >
+          <UIcon :name="iconName(item.icon)" class="size-4" />
+        </span>
+        <span class="flex-1 truncate font-medium">{{ item.label }}</span>
         <span
           v-if="item.to === '/shops' && shopPending > 0"
-          class="rounded-md bg-honey px-1.5 py-0.5 text-[0.65rem] font-bold text-chocolate"
+          class="rounded-full bg-[#e9748e] px-1.5 py-0.5 text-[0.65rem] font-bold leading-none text-white"
         >
           {{ shopPending }}
         </span>
@@ -101,11 +106,11 @@ function iconName(icon: string) {
 
       <button
         type="button"
-        class="mt-3 flex w-full items-center gap-2 rounded-xl border border-honey/25 px-3 py-2 text-left text-sm text-cream/55"
+        class="mt-2 flex w-full items-center justify-between gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-left text-xs font-medium text-cream/45 transition hover:border-white/15 hover:bg-white/[0.06] hover:text-cream/75"
         @click="more = !more"
       >
-        <UIcon :name="more ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="size-4" />
-        {{ more ? "Hide more" : "More tools" }}
+        <span>{{ more ? "Hide more tools" : "More tools" }}</span>
+        <UIcon :name="more ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="size-3.5" />
       </button>
 
       <template v-if="more">
@@ -113,26 +118,31 @@ function iconName(icon: string) {
           v-for="item in NAV_MORE"
           :key="item.to"
           :to="item.to"
-          class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-cream/70 transition hover:bg-white/5 hover:text-white"
-          :class="active(item.to) ? 'bg-honey/25 text-white shadow-[inset_3px_0_0_#d4893a]' : ''"
+          class="group flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm text-cream/65 transition"
+          :class="active(item.to)
+            ? 'bg-[#e9748e]/20 text-white shadow-[inset_3px_0_0_#e9748e]'
+            : 'hover:bg-white/[0.06] hover:text-white'"
           @click="$emit('close')"
         >
-          <UIcon :name="iconName(item.icon)" class="size-4 shrink-0 text-honey" />
-          {{ item.label }}
+          <span
+            class="grid size-8 shrink-0 place-items-center rounded-lg transition"
+            :class="active(item.to) ? 'bg-[#e9748e]/35 text-white' : 'bg-white/[0.05] text-[#f2a7ad] group-hover:bg-white/10'"
+          >
+            <UIcon :name="iconName(item.icon)" class="size-4" />
+          </span>
+          <span class="truncate font-medium">{{ item.label }}</span>
         </NuxtLink>
       </template>
     </nav>
-
-    <div class="shrink-0 border-t border-honey/15 p-3">
-      <p class="mb-2 truncate px-1 text-xs text-cream/45">{{ auth.user?.name || "Owner" }}</p>
-      <button
-        type="button"
-        class="sc-btn-ghost w-full !border-honey/30 !text-cream/85 !bg-transparent hover:!bg-white/5"
-        @click="logout"
-      >
-        <UIcon name="i-lucide-log-out" class="size-4" />
-        Log out
-      </button>
-    </div>
   </aside>
 </template>
+
+<style scoped>
+.sc-shell-aside {
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(233, 116, 142, 0.08) 0%, transparent 28%),
+    linear-gradient(180deg, #3a1e1a 0%, #241411 48%, #140c0b 100%);
+  box-shadow: 10px 0 40px -24px rgba(20, 10, 8, 0.7);
+}
+</style>

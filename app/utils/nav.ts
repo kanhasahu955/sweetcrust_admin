@@ -27,7 +27,6 @@ export const NAV_MORE: NavItem[] = [
   { to: "/reports", label: "Profit & Reports", icon: "lucide:chart-column", group: "more" },
   { to: "/returns", label: "Returns", icon: "lucide:rotate-ccw", group: "more" },
   { to: "/tickets", label: "Tickets", icon: "lucide:ticket", group: "more" },
-  { to: "/notifications", label: "Notifications", icon: "lucide:bell", group: "more" },
   { to: "/services", label: "Microservices", icon: "lucide:server", group: "more" },
   { to: "/settings", label: "Settings", icon: "lucide:settings", group: "more" },
 ]

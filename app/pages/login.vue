@@ -97,7 +97,7 @@ async function resend() {
 }
 
 const titles: Record<Mode, { h: string; p: string }> = {
-  login: { h: "Welcome back", p: "Sign in to your village supply desk." },
+  login: { h: "Welcome back", p: "Sign in to your bakery ops desk." },
   register: { h: "Create owner account", p: "One admin only — confirm by email next." },
   confirm: { h: "Confirm your email", p: "Enter the 6-digit code we sent you." },
 }
@@ -112,28 +112,36 @@ const modeItems = computed(() => {
 </script>
 
 <template>
-  <main class="grid min-h-screen lg:grid-cols-[1.15fr_1fr]">
+  <main class="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
     <section
-      class="relative flex min-h-[38vh] flex-col justify-end overflow-hidden bg-gradient-to-br from-[#3a2416] via-chocolate to-black p-8 text-cream lg:min-h-screen lg:p-16"
+      class="relative flex min-h-[36vh] flex-col justify-end overflow-hidden bg-gradient-to-br from-[#3a1e1a] via-[#2a1614] to-[#140a08] p-8 text-cream lg:min-h-screen lg:p-14"
     >
-      <div class="pointer-events-none absolute -right-16 -top-20 size-[420px] rounded-full bg-honey/30 blur-3xl" />
+      <div class="pointer-events-none absolute -right-20 -top-24 size-[440px] rounded-full bg-[#e9748e]/25 blur-3xl" />
+      <div class="pointer-events-none absolute -bottom-24 left-10 size-[320px] rounded-full bg-[#f2a7ad]/15 blur-3xl" />
       <div class="relative z-10 max-w-md">
-        <UBadge color="warning" variant="subtle" class="mb-3">Village shop supply</UBadge>
-        <h1 class="font-display text-5xl font-semibold leading-none lg:text-6xl">SweetCrust</h1>
-        <p class="mt-4 max-w-[36ch] text-base text-cream/75">
-          Buy from the city. Supply village shops. Collect udhaar. Run the hub from one calm desk.
+        <BrandLogo size="xl" class="mb-6" />
+        <span class="mb-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-[#f2a7ad]">
+          Bakery ops
+        </span>
+        <h1 class="font-display text-4xl font-semibold leading-none lg:text-5xl">Ops console</h1>
+        <p class="mt-4 max-w-[38ch] text-base leading-relaxed text-cream/70">
+          Control for stock, shops, orders, riders, and collections — live and production-ready.
         </p>
+        <ul class="mt-8 space-y-2 text-sm text-cream/55">
+          <li class="flex items-center gap-2"><UIcon name="i-lucide-radio" class="size-4 text-[#e9748e]" /> Realtime order & chat signals</li>
+          <li class="flex items-center gap-2"><UIcon name="i-lucide-store" class="size-4 text-[#e9748e]" /> B2B shop credit & approvals</li>
+          <li class="flex items-center gap-2"><UIcon name="i-lucide-bike" class="size-4 text-[#e9748e]" /> Picking · routing · delivery</li>
+        </ul>
       </div>
     </section>
 
-    <section class="grid place-items-center p-6 lg:p-12">
-      <UCard class="w-full max-w-[420px]">
-        <template #header>
-          <div>
-            <h2 class="font-display m-0 text-2xl text-chocolate">{{ titles[mode].h }}</h2>
-            <p class="mt-1 text-sm text-[var(--muted)]">{{ titles[mode].p }}</p>
-          </div>
-        </template>
+    <section class="grid place-items-center bg-[var(--bg)] p-5 sm:p-8 lg:p-12">
+      <div class="sc-card-smoke w-full max-w-[420px] p-6 sm:p-8">
+        <BrandLogo size="md" class="mb-5 lg:hidden" />
+        <div class="mb-5">
+          <h2 class="font-display m-0 text-2xl text-chocolate">{{ titles[mode].h }}</h2>
+          <p class="mt-1 text-sm text-[var(--muted)]">{{ titles[mode].p }}</p>
+        </div>
 
         <form class="space-y-3" @submit.prevent="submit">
           <UTabs
@@ -171,17 +179,17 @@ const modeItems = computed(() => {
 
           <template v-else>
             <UFormField label="Phone or email">
-              <UInput v-model="form.loginId" required class="w-full" />
+              <UInput v-model="form.loginId" required autocomplete="username" class="w-full" />
             </UFormField>
             <UFormField label="Password">
-              <UInput v-model="form.password" type="password" required class="w-full" />
+              <UInput v-model="form.password" type="password" required autocomplete="current-password" class="w-full" />
             </UFormField>
           </template>
 
           <UAlert v-if="info" color="warning" variant="subtle" :description="info" />
           <UAlert v-if="error" color="error" variant="subtle" :description="error" />
 
-          <UButton type="submit" block :loading="busy" :disabled="busy">
+          <UButton type="submit" block color="secondary" :loading="busy" :disabled="busy">
             {{ mode === "register" ? "Create admin" : mode === "confirm" ? "Confirm email" : "Sign in" }}
           </UButton>
 
@@ -204,7 +212,7 @@ const modeItems = computed(() => {
             />
           </div>
         </form>
-      </UCard>
+      </div>
     </section>
   </main>
 </template>

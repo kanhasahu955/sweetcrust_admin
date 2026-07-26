@@ -31,6 +31,11 @@ export function useSocket() {
     s?.emit("join_chat", { conversation_id: conversationId })
   }
 
+  function joinOrder(orderId: number) {
+    const s = connect()
+    s?.emit("join_order", { order_id: orderId })
+  }
+
   function emitTyping(conversationId: number, isTyping: boolean) {
     socket?.emit("typing", { conversation_id: conversationId, is_typing: isTyping })
   }
@@ -40,5 +45,5 @@ export function useSocket() {
     socket = null
   }
 
-  return { connect, joinChat, emitTyping, disconnect, get socket() { return socket } }
+  return { connect, joinChat, joinOrder, emitTyping, disconnect, get socket() { return socket } }
 }
