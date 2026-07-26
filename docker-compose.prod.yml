@@ -9,15 +9,17 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-https://api.skbakery.in}
-        NUXT_PUBLIC_SOCKET_BASE: ${NUXT_PUBLIC_SOCKET_BASE:-https://api.skbakery.in}
+        NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-https://admin.skbakery.in}
+        NUXT_PUBLIC_SOCKET_BASE: ${NUXT_PUBLIC_SOCKET_BASE:-https://admin.skbakery.in}
+        NUXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NUXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
     restart: unless-stopped
     environment:
       NODE_ENV: production
       HOST: "0.0.0.0"
       PORT: "3000"
-      NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-https://api.skbakery.in}
-      NUXT_PUBLIC_SOCKET_BASE: ${NUXT_PUBLIC_SOCKET_BASE:-https://api.skbakery.in}
+      NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-https://admin.skbakery.in}
+      NUXT_PUBLIC_SOCKET_BASE: ${NUXT_PUBLIC_SOCKET_BASE:-https://admin.skbakery.in}
+      NUXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NUXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
     # No host ports — only reachable via backend nginx on sweetcrust network
     deploy:
       resources:

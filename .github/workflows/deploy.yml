@@ -66,12 +66,14 @@ jobs:
         env:
           NUXT_PUBLIC_API_BASE: ${{ vars.NUXT_PUBLIC_API_BASE }}
           NUXT_PUBLIC_SOCKET_BASE: ${{ vars.NUXT_PUBLIC_SOCKET_BASE }}
+          NUXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY }}
           CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
         run: |
           set -euo pipefail
           cat > .env.production <<EOF
-          NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE:-https://api.skbakery.in}
-          NUXT_PUBLIC_SOCKET_BASE=${NUXT_PUBLIC_SOCKET_BASE:-https://api.skbakery.in}
+          NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE:-https://admin.skbakery.in}
+          NUXT_PUBLIC_SOCKET_BASE=${NUXT_PUBLIC_SOCKET_BASE:-https://admin.skbakery.in}
+          NUXT_PUBLIC_GOOGLE_MAPS_API_KEY=${NUXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
           ADMIN_DOMAIN=admin.skbakery.in
           CERTBOT_EMAIL=${CERTBOT_EMAIL:-}
           DEPLOY_PATH=/opt/sweetcrust/admin
@@ -79,6 +81,7 @@ jobs:
           sed -i 's/^[[:space:]]*//' .env.production
           chmod 600 .env.production
           echo "API base: $(grep NUXT_PUBLIC_API_BASE .env.production)"
+          echo "Maps key set: $(grep -q '^NUXT_PUBLIC_GOOGLE_MAPS_API_KEY=.\+' .env.production && echo yes || echo no)"
 
       - name: Deploy
         env:
